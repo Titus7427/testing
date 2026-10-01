@@ -1,0 +1,41 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Node / frontend
+node_modules/
+dist/
+build/
+coverage/
+.npm/
+
+# Logs
+*.log
+logs/
+
+# Docker / local data
+postgres_data/
+redis_data/
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.csr
+
+# Misc
+*.sqlite3

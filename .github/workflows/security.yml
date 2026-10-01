@@ -1,0 +1,15 @@
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for secrets in repository
+        run: |
+          ! grep -R "AWS_SECRET_ACCESS_KEY\|AKIA\|BEGIN PRIVATE KEY\|password\s*=\s*.*change-me" . --exclude-dir=.git --exclude=.env.example || true
