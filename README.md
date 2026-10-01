@@ -1,58 +1,73 @@
 # MobiServe Uganda
 
-MobiServe Uganda is a trusted local service marketplace for customers and vetted providers across Uganda. The project is designed to grow from a secure MVP into a broader East and Central African platform.
+MobiServe connects households and businesses with trusted local service professionals. The current MVP includes a live service catalog, provider directory, password-based customer accounts, service requests, and provider acceptance with customer notifications.
 
-## Vision
-Find trusted services. Get things done.
+## Stack
+- Frontend: React 19, TypeScript, Vite, Lucide
+- Backend: Flask, SQLAlchemy, Flask-Migrate, JWT
+- Database: PostgreSQL in Docker; SQLite can be used for local backend development
+- Local orchestration: Docker Compose
 
-## Project structure
-- backend/ - Flask API and business logic
-- frontend/ - React + TypeScript + Vite application
-- docs/ - architecture and product documentation
-- deployment/ - deployment and infrastructure scripts
-- .github/workflows/ - CI workflows
+## Run With Docker
+1. Copy `.env.example` to `.env` and replace both signing secrets with unique random values of at least 32 characters.
+2. From the repository root, run:
 
-## Initial tech stack
-- Frontend: React, TypeScript, Vite, Tailwind CSS
-- Backend: Flask, SQLAlchemy, JWT, Alembic
-- Database: PostgreSQL
-- Cache and background jobs: Redis
-- Containerization: Docker Compose
-
-## Quick start
-### 1) Environment
-Copy `.env.example` to `.env` and configure secret values.
-
-### 2) Start the stack
 ```bash
 docker compose up --build
 ```
 
-### 3) Access the app
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000/api/v1/health
+Open the marketplace at http://localhost:5173. The backend health check is at http://localhost:5000/api/v1/health. Docker waits for PostgreSQL, applies the database migrations, and loads local demo data before starting the API.
 
-## Backend local setup
-```bash
-cd backend
+## Local Development
+Start PostgreSQL, then set `DATABASE_URL` to its host address in `.env`. The Docker Compose file uses the container hostname `db`; a backend process running directly on your computer needs `localhost`.
+
+Backend, from the repository root in PowerShell:
+
+```powershell
+Set-Location backend
 python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python run.py
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+$env:APP_ENV = "development"
+$env:DATABASE_URL = "sqlite:///app.db"
+.\.venv\Scripts\python.exe -m flask --app run db upgrade
+.\.venv\Scripts\python.exe -m flask --app run seed-demo
+.\.venv\Scripts\python.exe run.py
 ```
 
-## Frontend local setup
-```bash
-cd frontend
+Frontend, in a second terminal:
+
+```powershell
+Set-Location frontend
 npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-## Milestone approach
-This repository starts with a production-appropriate foundation and architecture before adding the marketplace features in sequence.
+Vite proxies `/api` to `http://127.0.0.1:5000` by default. Set `VITE_API_PROXY_TARGET` when the backend is at a different address.
 
-## Security note
-Do not commit secrets. Keep production API credentials and private keys in local environment files or deployment secret stores only.
+## Demo Accounts
+These accounts are created only by the development/test seed command. Do not seed demo accounts in a production environment.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Customer | `customer@mobiserve.ug` | `MobiServeDemo2026!` |
+| Provider | `provider@mobiserve.ug` | `MobiServeProvider2026!` |
+| Electrical provider | `daniel@mobiserve.ug` | `MobiServeProvider2026!` |
+| Admin | `admin@mobiserve.ug` | `MobiServeAdmin2026!` |
+
+All seeded passwords are stored as Werkzeug password hashes. Seeded identities and marketplace statistics are illustrative development data, not real people or verified service claims.
+
+## API
+- `GET /api/v1/health`
+- `GET /api/v1/categories`, `/api/v1/services`, `/api/v1/providers`
+- `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
+- `POST /api/v1/service-requests`, `GET /api/v1/service-requests`
+- `GET /api/v1/providers/service-requests` (verified providers only)
+- `POST /api/v1/service-requests/{id}/bookings` (verified providers only)
+
+Run backend tests with `python -m pytest -q` from `backend`. Build the frontend with `npm run build` from `frontend`.
+
+## Security
+Production startup requires separate `SECRET_KEY` and `JWT_SECRET_KEY` values, each at least 32 characters long. Apply schema changes with `flask --app run db upgrade`; production never creates tables implicitly. Keep `.env` and all production credentials out of version control.
 
 ## License
 MIT
