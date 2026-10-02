@@ -13,6 +13,7 @@ class ProviderProfile(db.Model):
     longitude = db.Column(db.Float, nullable=True)
     description = db.Column(db.Text, nullable=True)
     verification_status = db.Column(db.String(30), nullable=False, default="pending")
+    show_location = db.Column(db.Boolean, default=False, nullable=False)
     rating = db.Column(db.Float, default=0.0, nullable=False)
     completed_jobs = db.Column(db.Integer, default=0, nullable=False)
     response_rate = db.Column(db.Float, default=0.0, nullable=False)
@@ -36,11 +37,14 @@ class ProviderProfile(db.Model):
             "business_name": self.business_name,
             "service_area": self.service_area,
             "location": self.location,
+            "latitude": self.latitude if self.show_location else None,
+            "longitude": self.longitude if self.show_location else None,
             "verification_status": self.verification_status,
             "rating": float(self.rating),
             "completed_jobs": self.completed_jobs,
             "response_rate": float(self.response_rate),
             "is_active": self.is_active,
+            "services": [entry.service.to_dict() for entry in self.services],
             "user": self.user.to_public_dict() if self.user else None,
         }
 

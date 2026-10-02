@@ -67,6 +67,24 @@ def register_service_request_routes(app):
             status="submitted",
         )
         db.session.add(service_request)
+        matching_providers = (
+            ProviderProfile.query
+            .join(ProviderService, ProviderService.provider_id == ProviderProfile.id)
+            .filter(
+                ProviderService.service_id == service.id,
+                ProviderService.is_available.is_(True),
+                ProviderProfile.is_active.is_(True),
+                ProviderProfile.verification_status == "verified",
+                ProviderProfile.user_id != user.id,
+            )
+            .all()
+        )
+        for provider in matching_providers:
+            db.session.add(Notification(
+                user_id=provider.user_id,
+                title=f"New service request near {location}",
+                message=f"{title}: {service.name} request, {urgency} priority.",
+            ))
         db.session.commit()
 
         return jsonify({"success": True, "data": service_request.to_dict()}), 201

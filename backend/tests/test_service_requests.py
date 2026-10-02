@@ -1,6 +1,6 @@
 from app.app_factory import create_app
 from app.extensions import db
-from app.models import ProviderProfile, ProviderService, Service, ServiceCategory, User
+from app.models import Notification, ProviderProfile, ProviderService, Service, ServiceCategory, User
 
 
 def register_customer(client):
@@ -68,6 +68,31 @@ def test_customer_can_create_and_list_own_service_requests():
     listed = client.get("/api/v1/service-requests", headers=headers)
     assert listed.status_code == 200
     assert [item["id"] for item in listed.get_json()["data"]] == [request_data["id"]]
+
+
+def test_new_request_notifies_matching_verified_provider():
+    app = create_app("testing")
+    client = app.test_client()
+    token = register_customer(client)
+    service_id = create_service(app)
+
+    response = client.post(
+        "/api/v1/service-requests",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "service_id": service_id,
+            "title": "Check the kitchen power",
+            "description": "The power cuts when the kettle is switched on.",
+            "location": "Ntinda, Kampala",
+        },
+    )
+
+    assert response.status_code == 201
+    with app.app_context():
+        provider = ProviderProfile.query.filter_by(business_name="Otema Electrical Services").first()
+        notification = Notification.query.filter_by(user_id=provider.user_id, booking_id=None).first()
+        assert notification is not None
+        assert notification.title == "New service request near Ntinda, Kampala"
 
 
 def test_verified_provider_can_accept_matching_request():

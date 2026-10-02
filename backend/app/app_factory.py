@@ -4,7 +4,10 @@ from .config import config
 from .extensions import db, jwt, limiter, migrate
 from .models import *  # noqa: F401,F403
 from .routes.auth_routes import register_auth_routes
+from .routes.admin_routes import register_admin_routes
 from .routes.catalog_routes import register_catalog_routes
+from .routes.notification_routes import register_notification_routes
+from .routes.provider_routes import register_provider_routes
 from .routes.service_request_routes import register_service_request_routes
 from .services.seed_service import seed_demo_data
 
@@ -40,7 +43,10 @@ def create_app(config_name: str | None = None):
         seed_demo_data()
 
     register_auth_routes(app)
+    register_admin_routes(app)
     register_catalog_routes(app)
+    register_notification_routes(app)
+    register_provider_routes(app)
     register_service_request_routes(app)
 
     @app.get("/api/v1/health")

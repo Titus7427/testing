@@ -23,6 +23,13 @@ def test_demo_seed_data_is_available():
     assert len(categories_payload["data"]) >= 1
     assert len(providers_payload["data"]) >= 1
     assert len(services_payload["data"]) >= 1
+    electrical_provider = next(
+        provider
+        for provider in providers_payload["data"]
+        if provider["business_name"] == "Otema Electrical Services"
+    )
+    assert electrical_provider["latitude"] == 0.3591
+    assert electrical_provider["longitude"] == 32.6153
 
     demo_login = client.post(
         "/api/v1/auth/login",

@@ -2,7 +2,7 @@ from flask import jsonify, request
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 
 from app.extensions import db
-from app.models import Role, User, UserRole
+from app.models import ProviderProfile, Role, User, UserRole
 
 
 def register_auth_routes(app):
@@ -14,6 +14,9 @@ def register_auth_routes(app):
         email = (payload.get("email") or "").strip().lower()
         phone = (payload.get("phone") or "").strip()
         password = payload.get("password") or ""
+        account_type = (payload.get("account_type") or "customer").strip().lower()
+        business_name = (payload.get("business_name") or "").strip()
+        service_area = (payload.get("service_area") or "").strip()
 
         if not first_name or not last_name or not email or not password:
             return jsonify({
@@ -25,6 +28,17 @@ def register_auth_routes(app):
             return jsonify({
                 "success": False,
                 "error": {"code": "VALIDATION_ERROR", "message": "Password must be at least 8 characters long."},
+            }), 400
+
+        if account_type not in {"customer", "provider"}:
+            return jsonify({
+                "success": False,
+                "error": {"code": "VALIDATION_ERROR", "message": "Account type must be customer or provider."},
+            }), 400
+        if account_type == "provider" and (not business_name or not service_area):
+            return jsonify({
+                "success": False,
+                "error": {"code": "VALIDATION_ERROR", "message": "Business name and service area are required for provider registration."},
             }), 400
 
         if User.query.filter_by(email=email).first() is not None:
@@ -44,16 +58,25 @@ def register_auth_routes(app):
         db.session.add(user)
         db.session.flush()
 
-        customer_role = Role.query.filter_by(name="CUSTOMER").first()
-        if customer_role is None:
-            customer_role = Role(name="CUSTOMER", description="Default customer role")
-            db.session.add(customer_role)
+        role_name = "PROVIDER" if account_type == "provider" else "CUSTOMER"
+        role = Role.query.filter_by(name=role_name).first()
+        if role is None:
+            role = Role(name=role_name, description=f"Default {account_type} role")
+            db.session.add(role)
             db.session.flush()
 
-        db.session.add(UserRole(user_id=user.id, role_id=customer_role.id))
+        db.session.add(UserRole(user_id=user.id, role_id=role.id))
+        if account_type == "provider":
+            db.session.add(ProviderProfile(
+                user_id=user.id,
+                business_name=business_name,
+                service_area=service_area,
+                location=service_area,
+                verification_status="pending",
+            ))
         db.session.commit()
 
-        token = create_access_token(identity=str(user.id), additional_claims={"role": customer_role.name})
+        token = create_access_token(identity=str(user.id), additional_claims={"role": role.name})
 
         return jsonify({
             "success": True,
@@ -76,8 +99,7 @@ def register_auth_routes(app):
                 "error": {"code": "INVALID_CREDENTIALS", "message": "Incorrect email or password."},
             }), 401
 
-        role_name = user.roles[0].name if user.roles else "CUSTOMER"
-        token = create_access_token(identity=str(user.id), additional_claims={"role": role_name})
+        token = create_access_token(identity=str(user.id), additional_claims={"role": user.primary_role})
 
         return jsonify({
             "success": True,
@@ -98,7 +120,7 @@ def register_auth_routes(app):
                 "error": {"code": "USER_NOT_FOUND", "message": "User not found."},
             }), 404
 
-        role_name = user.roles[0].name if user.roles else "CUSTOMER"
+        role_name = user.primary_role
         return jsonify({
             "success": True,
             "data": {

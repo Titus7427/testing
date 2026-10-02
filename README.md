@@ -1,6 +1,13 @@
 # MobiServe Uganda
 
-MobiServe connects households and businesses with trusted local service professionals. The current MVP includes a live service catalog, provider directory, password-based customer accounts, service requests, and provider acceptance with customer notifications.
+MobiServe connects households and businesses with trusted local service professionals. Sign-in is the first screen; after authentication, customers, providers, and administrators land in separate workspaces with role-specific tools.
+
+## Workspaces
+- Customer: browse verified providers and shared map pins, submit service requests, review request status, and receive booking notifications.
+- Provider: manage offered services, review matching open requests, accept work, and set a service-area pin. Precise coordinates stay private unless the provider explicitly shares them.
+- Administrator: review and verify provider applications and monitor marketplace/request totals.
+
+Provider request alerts are stored in the notification inbox and refreshed in the dashboard every 30 seconds. The provider inbox is available only after verification. Customer map tiles use OpenStreetMap; providers can click to place a pin or ask the browser for their location. No paid maps API key is required.
 
 ## Stack
 - Frontend: React 19, TypeScript, Vite, Lucide
@@ -63,6 +70,9 @@ All seeded passwords are stored as Werkzeug password hashes. Seeded identities a
 - `POST /api/v1/service-requests`, `GET /api/v1/service-requests`
 - `GET /api/v1/providers/service-requests` (verified providers only)
 - `POST /api/v1/service-requests/{id}/bookings` (verified providers only)
+- `GET /api/v1/notifications`, `PATCH /api/v1/notifications/{id}/read`
+- `GET/PATCH /api/v1/provider/profile`, `PUT /api/v1/provider/services`
+- `GET /api/v1/admin/overview`, `GET /api/v1/admin/providers`, `PATCH /api/v1/admin/providers/{id}/verification` (administrators only)
 
 Run backend tests with `python -m pytest -q` from `backend`. Build the frontend with `npm run build` from `frontend`.
 

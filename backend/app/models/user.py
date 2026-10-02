@@ -39,6 +39,14 @@ class User(db.Model):
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
 
+    @property
+    def primary_role(self):
+        role_priority = {"ADMIN": 0, "PROVIDER": 1, "CUSTOMER": 2}
+        return min(self.roles, key=lambda role: role_priority.get(role.name, 99)).name if self.roles else "CUSTOMER"
+
+    def has_role(self, role_name: str) -> bool:
+        return any(role.name == role_name for role in self.roles)
+
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
 
